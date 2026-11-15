@@ -1,0 +1,23 @@
+name: Create Paws Gone Wild Short
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 23 */2 * *'
+permissions:
+  contents: read
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install FFmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg fonts-dejavu-core
+      - name: Render video
+        run: python3 make_video.py
+      - name: Save finished video
+        uses: actions/upload-artifact@v4
+        with:
+          name: paws-gone-wild-short
+          path: output/paws_gone_wild_short.mp4
+          retention-days: 7
