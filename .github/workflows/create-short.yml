@@ -41,11 +41,11 @@ jobs:
 
       - name: Create video with female narration
         run: |
+          python -m py_compile make_video.py
           python make_video.py
-          echo "Checking finished video audio..."
-          ffprobe -v error -show_entries stream=index,codec_type,codec_name -of json output/paws_gone_wild_short.mp4
-          echo "Measuring audio levels..."
+          echo "Checking finished audio..."
           ffmpeg -hide_banner -i output/paws_gone_wild_short.mp4 -af volumedetect -vn -f null - 2>&1 | grep -E "mean_volume|max_volume"
+
 
 
       - name: Save finished video
