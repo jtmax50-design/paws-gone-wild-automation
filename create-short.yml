@@ -12,19 +12,34 @@ jobs:
       - name: Get project files
         uses: actions/checkout@v4
 
-      - name: Install audio and video tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg espeak-ng fonts-dejavu-core
-          command -v espeak-ng
-          espeak-ng --version
-
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
 
-      - name: Create video with sound
+      - name: Install video and voice tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg fonts-dejavu-core
+          python -m pip install --upgrade pip
+          python -m pip install piper-tts
+          python -m piper --help
+
+      - name: Download female Piper voice
+        run: |
+          mkdir -p voices
+          curl -fL --retry 3 \
+            -o voices/en_US-lessac-medium.onnx \
+            "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx"
+
+          curl -fL --retry 3 \
+            -o voices/en_US-lessac-medium.onnx.json \
+            "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx.json"
+
+          test -s voices/en_US-lessac-medium.onnx
+          test -s voices/en_US-lessac-medium.onnx.json
+
+      - name: Create video with Piper narration
         run: python make_video.py
 
       - name: Save finished video
