@@ -293,8 +293,10 @@ with tempfile.TemporaryDirectory() as tmp:
         "-c:v", "copy",
         "-c:a", "aac",
         "-b:a", "192k",
+        "-af", "apad=whole_dur=25,atrim=duration=25",
         "-t", "25",
         "-movflags", "+faststart",
+
         str(final_video)
     ])
 
