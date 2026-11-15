@@ -16,7 +16,7 @@ captions = [
     "YOU ARE FIRED!",
     'BIG MISTAKE...',
     'WATCH THIS!',
-    "WHO'S THE BOSS NOW?",
+    "WHO IS THE BOSS NOW?",
 ]
 
 def run(cmd):
