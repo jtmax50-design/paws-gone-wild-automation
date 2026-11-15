@@ -243,8 +243,6 @@ with tempfile.TemporaryDirectory() as tmp:
         "alimiter=limit=0.95[audio]"
     )
 
-    )
-
     audio_filter = ";".join(filters)
 
     command = [
