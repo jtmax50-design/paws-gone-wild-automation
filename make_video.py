@@ -233,12 +233,16 @@ with tempfile.TemporaryDirectory() as tmp:
 
     voice_inputs = "".join(f"[v{i}]" for i in range(5))
 
+    
     filters.append(
         f"{voice_inputs}[music]"
         "amix=inputs=6:duration=longest:"
         "dropout_transition=0:normalize=0,"
         f"atrim=duration={TOTAL_DURATION},"
+        "volume=18dB,"
         "alimiter=limit=0.95[audio]"
+    )
+
     )
 
     audio_filter = ";".join(filters)
