@@ -203,65 +203,72 @@ with tempfile.TemporaryDirectory() as tmp:
     final_video = OUT / "paws_gone_wild_short.mp4"
 
     
+    
     print("Synchronizing narration with scenes...", flush=True)
 
-    # Create a complete 25-second audio track first.
-    # Every narration line starts with its corresponding scene.
-    audio_inputs = [
-        "-i", str(background)
-    ]
+    # Build each scene's narration as a separate 5-second clip.
+    scene_audio_files = []
 
-    for narration in narration_files:
-        audio_inputs.extend(["-i", str(narration)])
+    for i, narration in enumerate(narration_files):
+        scene_audio = temp / f"scene_audio_{i+1}.wav"
 
-    filters = [
-        "[0:a]"
-        "aresample=44100,"
-        "volume=0.22,"
-        "apad=whole_dur=25,"
-        "atrim=duration=25,"
-        "asetpts=PTS-STARTPTS[music]"
-    ]
-
-    for i in range(5):
-        start_ms = i * 5000 + 250
-
-        filters.append(
-            f"[{i+1}:a]"
+        run([
+            "ffmpeg", "-hide_banner", "-loglevel", "error",
+            "-y",
+            "-i", str(narration),
+            "-af",
             "aresample=44100,"
             "atempo=1.08,"
             "volume=2.0,"
-            "atrim=duration=4.5,"
-            "asetpts=PTS-STARTPTS,"
-            f"adelay={start_ms}:all=1,"
-            "apad=whole_dur=25,"
-            "atrim=duration=25,"
-            f"asetpts=PTS-STARTPTS[v{i}]"
+            "apad=whole_dur=4.75,"
+            "atrim=duration=4.75,"
+            "adelay=250:all=1,"
+            "apad=whole_dur=5,"
+            "atrim=duration=5,"
+            "asetpts=PTS-STARTPTS",
+            "-ar", "44100",
+            "-ac", "1",
+            "-c:a", "pcm_s16le",
+            str(scene_audio)
+        ])
+
+        scene_audio_files.append(scene_audio)
+
+    # Join the five 5-second narration clips in order.
+    narration_concat = temp / "narration_concat.txt"
+    narration_concat.write_text(
+        "".join(
+            f"file '{p}'\n" for p in scene_audio_files
         )
-
-    voice_labels = "".join(
-        f"[v{i}]" for i in range(5)
     )
 
-    filters.append(
-        f"[music]{voice_labels}"
-        "amix=inputs=6:duration=first:"
-        "normalize=0,"
-        "volume=3.0,"
-        "alimiter=limit=0.95,"
-        "aresample=44100,"
-        "apad=whole_dur=25,"
-        "atrim=duration=25,"
-        "asetpts=PTS-STARTPTS[audio]"
-    )
+    full_narration = temp / "full_narration.wav"
 
+    run([
+        "ffmpeg", "-hide_banner", "-loglevel", "error",
+        "-y",
+        "-f", "concat",
+        "-safe", "0",
+        "-i", str(narration_concat),
+        "-c:a", "pcm_s16le",
+        str(full_narration)
+    ])
+
+    # Mix the full-length narration with the background music.
     mixed_audio = temp / "mixed_audio.wav"
 
     run([
         "ffmpeg", "-hide_banner", "-loglevel", "error",
         "-y",
-        *audio_inputs,
-        "-filter_complex", ";".join(filters),
+        "-i", str(full_narration),
+        "-i", str(background),
+        "-filter_complex",
+        "[0:a]volume=2.0[voice];"
+        "[1:a]volume=0.22[music];"
+        "[voice][music]"
+        "amix=inputs=2:duration=first:normalize=0,"
+        "volume=2.0,"
+        "alimiter=limit=0.95[audio]",
         "-map", "[audio]",
         "-c:a", "pcm_s16le",
         "-ar", "44100",
@@ -270,33 +277,9 @@ with tempfile.TemporaryDirectory() as tmp:
         str(mixed_audio)
     ])
 
-    # Verify the audio BEFORE attaching it to the video.
-    def get_duration(path, stream_type):
-        result = subprocess.run(
-            [
-                "ffprobe", "-v", "error",
-                "-select_streams", stream_type,
-                "-show_entries", "stream=duration",
-                "-of", "default=noprint_wrappers=1:nokey=1",
-                str(path)
-            ],
-            capture_output=True,
-            text=True,
-            check=True
-        )
-        return float(result.stdout.strip().splitlines()[0])
-
-    audio_duration = get_duration(mixed_audio, "a:0")
-    print(f"Mixed audio duration: {audio_duration:.2f}s", flush=True)
-
-    if audio_duration < 24.5:
-        raise SystemExit(
-            "ERROR: Audio is too short. Video not published."
-        )
-
     final_video = OUT / "paws_gone_wild_short.mp4"
 
-    print("Attaching audio to video...", flush=True)
+    print("Attaching full-length narration...", flush=True)
 
     run([
         "ffmpeg", "-hide_banner", "-loglevel", "error",
@@ -308,25 +291,31 @@ with tempfile.TemporaryDirectory() as tmp:
         "-c:v", "copy",
         "-c:a", "aac",
         "-b:a", "192k",
-        "-ar", "44100",
-        "-ac", "1",
         "-t", "25",
         "-movflags", "+faststart",
         str(final_video)
     ])
 
-    final_audio_duration = get_duration(final_video, "a:0")
+    print("Checking final audio duration...", flush=True)
 
-    print(
-        f"Final audio duration: {final_audio_duration:.2f}s",
-        flush=True
+    result = subprocess.run(
+        [
+            "ffprobe", "-v", "error",
+            "-select_streams", "a:0",
+            "-show_entries", "stream=duration",
+            "-of", "default=noprint_wrappers=1:nokey=1",
+            str(final_video)
+        ],
+        capture_output=True,
+        text=True,
+        check=True
     )
 
-    if final_audio_duration < 24.5:
-        raise SystemExit(
-            "ERROR: Final MP4 has incomplete audio."
-        )
+    audio_duration = float(result.stdout.strip().splitlines()[0])
+    print(f"Final audio duration: {audio_duration:.2f}s", flush=True)
 
-print("SUCCESS! Created Paws Gone Wild with full-length audio.")
+    if audio_duration < 24.5:
+        raise SystemExit("ERROR: Audio track is too short.")
+
+print("SUCCESS! Narration synchronized across five scenes.")
 print("Video: output/paws_gone_wild_short.mp4")
-
