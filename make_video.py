@@ -13,7 +13,7 @@ if missing:
 
 captions = [
     'MONDAY AGAIN?!',
-    "YOU'RE FIRED!",
+    "YOU ARE FIRED!",
     'BIG MISTAKE...',
     'WATCH THIS!',
     "WHO'S THE BOSS NOW?",
