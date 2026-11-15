@@ -1,0 +1,33 @@
+
+name: Create Short
+
+on:
+  workflow_dispatch:
+
+jobs:
+  create-video:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Get project files
+        uses: actions/checkout@v4
+
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Create video
+        run: python make_video.py
+
+      - name: Save finished video
+        uses: actions/upload-artifact@v4
+        with:
+          name: paws-gone-wild-short
+          path: output/*.mp4
+          if-no-files-found: error
