@@ -41,8 +41,11 @@ jobs:
           test -s voices/en_US-lessac-medium.onnx
           test -s voices/en_US-lessac-medium.onnx.json
 
-      - name: Create video with Piper narration
-        run: python make_video.py
+      - name: Create video with female narration
+        run: |
+          python -m py_compile make_video.py
+          python make_video.py
+
 
       - name: Save finished video
         uses: actions/upload-artifact@v4
