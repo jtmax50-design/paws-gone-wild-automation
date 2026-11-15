@@ -12,19 +12,34 @@ jobs:
       - name: Get project files
         uses: actions/checkout@v4
 
-      - name: Install audio and video tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg espeak-ng fonts-dejavu-core
-          command -v espeak-ng
-          espeak-ng --version
-
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
           python-version: '3.11'
 
-      - name: Create video with sound
+      - name: Install Piper and FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg fonts-dejavu-core
+          python -m pip install piper-tts
+
+      - name: Download female voice
+        run: |
+          mkdir -p voices
+
+          curl -fL --retry 3 \
+            -o voices/en_US-lessac-medium.onnx \
+            "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx"
+
+          curl -fL --retry 3 \
+            -o voices/en_US-lessac-medium.onnx.json \
+            "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx.json"
+
+          ls -lh voices/
+          test -s voices/en_US-lessac-medium.onnx
+          test -s voices/en_US-lessac-medium.onnx.json
+
+      - name: Create video with female narration
         run: python make_video.py
 
       - name: Save finished video
@@ -33,3 +48,4 @@ jobs:
           name: paws-gone-wild-short
           path: output/*.mp4
           if-no-files-found: error
+
