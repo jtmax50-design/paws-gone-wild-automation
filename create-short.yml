@@ -16,7 +16,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg espeak-ng fonts-dejavu-core
-          which espeak-ng
+          command -v espeak-ng
+          espeak-ng --version
 
       - name: Set up Python
         uses: actions/setup-python@v5
