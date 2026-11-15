@@ -40,7 +40,28 @@ jobs:
           test -s voices/en_US-lessac-medium.onnx.json
 
       - name: Create video with Piper narration
-        run: python make_video.py
+        run: |
+          mkdir -p voices
+
+          if [ ! -s voices/en_US-lessac-medium.onnx ]; then
+            curl -fL --retry 3 \
+              -o voices/en_US-lessac-medium.onnx \
+              "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx"
+          fi
+
+          if [ ! -s voices/en_US-lessac-medium.onnx.json ]; then
+            curl -fL --retry 3 \
+              -o voices/en_US-lessac-medium.onnx.json \
+              "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx.json"
+          fi
+
+          echo "Checking Piper voice files..."
+          ls -lh voices/
+          test -s voices/en_US-lessac-medium.onnx
+          test -s voices/en_US-lessac-medium.onnx.json
+
+          python make_video.py
+
 
       - name: Save finished video
         uses: actions/upload-artifact@v4
