@@ -51,5 +51,4 @@ jobs:
           path: output/*.mp4
           if-no-files-found: error
 
-          if-no-files-found: error
 
