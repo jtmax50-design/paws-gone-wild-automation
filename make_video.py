@@ -220,12 +220,14 @@ with tempfile.TemporaryDirectory() as tmp:
             "aresample=44100,"
             "atempo=1.08,"
             "volume=2.0,"
-            "apad=whole_dur=4.75,"
+            "apad,"
             "atrim=duration=4.75,"
+            "asetpts=PTS-STARTPTS,"
             "adelay=250:all=1,"
-            "apad=whole_dur=5,"
+            "apad,"
             "atrim=duration=5,"
             "asetpts=PTS-STARTPTS",
+
             "-ar", "44100",
             "-ac", "1",
             "-c:a", "pcm_s16le",
